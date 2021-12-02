@@ -1,4 +1,4 @@
-from day01 import get_solution
+from day02 import get_solution
 
 
 if __name__ == '__main__':
