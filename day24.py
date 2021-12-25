@@ -1,3 +1,4 @@
+import functools
 from typing import List
 import attr
 
@@ -143,6 +144,24 @@ def gen_ndigit_num(length):
                 yield i * 10 ** (length - 1) + num
 
 
+def find_zero_sols(blocks, digit_iter=lambda: range(1, 10)):
+    @functools.lru_cache(maxsize=None)
+    def local_solve(index, z_start):
+        if index >= len(blocks):
+            if z_start == 0:
+                return tuple()
+            else:
+                return None
+        for digit in digit_iter():
+            state = [0, 0, 0, z_start, digit]
+            final_state = run_program(blocks[index], state)
+            # only the z_value matters: try to find a solution for the given value of z
+            solution = local_solve(index + 1, final_state[3])
+            if solution is not None:
+                return (digit, ) + solution
+    return int(''.join(map(str, local_solve(0, 0))))
+
+
 def get_solution():
     with open('input/day24_input.txt') as f:
         lines = f.readlines()
@@ -160,6 +179,17 @@ mod w 2'''.splitlines()
     program = [parse_line(line.strip()) for line in lines]
     print(run_program(program, initialize_q_state(59998426997979)))
     print(run_program(program, initialize_q_state(13621111481315)))
+
+    blocks = [program[i*18:(i + 1) * 18] for i in range(14)]
+    pt2 = find_zero_sols(blocks)
+    print(pt2)
+    assert(run_program(program, initialize_q_state(pt2))[3] == 0)
+    pt1 = find_zero_sols(blocks, lambda: reversed(range(1, 10)))
+    print(pt1)
+    assert(run_program(program, initialize_q_state(pt1))[3] == 0)
+    # each block is a function only on the next input and the state of z
+    # we wish to find a list of inputs such that at the end, z = 0
+
     # for num in gen_ndigit_num(14): this will be too slow
     #     result = run_program(program, initialize_q_state(num))
     #     if result[3] == 0:
